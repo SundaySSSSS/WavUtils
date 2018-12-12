@@ -78,6 +78,7 @@ WavUtilsRet WavUtils::load(string path)
             {
                 cout << "found data seg, len = " << riffHeader.len << endl;
                 m_dataStartPos = ftell(m_fp);
+				cout << "data start pos = " << m_dataStartPos << endl;
                 m_dataLen = riffHeader.len;
                 break;
             }
@@ -134,9 +135,21 @@ WavUtilsRet WavUtils::create(std::string path, const WavInfo& info)
 	m_fp = fopen(path.c_str(), "wb+");
 	if (m_fp == NULL)
 		return WAV_OPEN_ERR;
+	
+	//准备数据RIFF头
+	RIFF_HEADER riffHeader;
+	memcpy(&riffHeader.title, "data", sizeof(riffHeader.title));
+	
 	//写入文件头
 	fwrite(&wavFormat, sizeof(wavFormat), 1, m_fp);
+	fwrite(&riffHeader, sizeof(riffHeader), 1, m_fp);
 
+	return WAV_UTILS_OK;
+}
+
+WavUtilsRet WavUtils::write(const char* buf, int32 size)
+{
+	//fwrite()
 	return WAV_UTILS_OK;
 }
 

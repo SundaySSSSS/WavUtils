@@ -29,12 +29,14 @@ typedef struct _WAV_FORMAT
 WAV_FORMAT;
 #pragma pack(pop)
 
+#pragma pack(push, 1)
 typedef struct _RIFF_HEADER
 {
     char title[4];
     uint32 len;
 }
 RIFF_HEADER;
+#pragma pack(pop)
 
 /* 程序内部使用的wav信息结构 */
 typedef struct _WavInfo
