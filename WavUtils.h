@@ -9,6 +9,7 @@ using namespace std;
 
 #define WAV_HEADER_LEN (16) //wav文件头结构的标准长度, 超过此长度说明有拓展信息
 
+#pragma pack(push, 1)
 typedef struct _WAV_FORMAT
 {
     char ChunkID[4];         /* "RIFF" */
@@ -26,6 +27,7 @@ typedef struct _WAV_FORMAT
     uint16 BitsPerSample;   /* 采样位数 存储每个采样值所用的二进制数位数。常见的位数有 4、8、12、16、24、32 */
 }
 WAV_FORMAT;
+#pragma pack(pop)
 
 typedef struct _RIFF_HEADER
 {
@@ -40,14 +42,14 @@ typedef struct _WavInfo
     uint16 numChannels;
     uint32 sampleRate;
     uint16 bitsPerSample;
-    uint32 dataStartPos;
-    uint32 dataLen;
+    uint32 dataStartPos;	//读取时有效, 写入时无效
+    uint32 dataLen;			//读取时有效, 写入时无效
 }
 WavInfo;
 
-typedef enum _WavFileRet
+typedef enum _WavUtilsRet
 {
-    WAV_LOAD_OK = 0,
+    WAV_UTILS_OK = 0,
     WAV_OPEN_ERR,
     WAV_READ_ERR,
     WAV_RIFF_ERR,
@@ -56,22 +58,35 @@ typedef enum _WavFileRet
     WAV_NOT_PCM_ERR,
     WAV_NO_DATA_ERR,
 }
-WavFileRet;
+WavUtilsRet;
 
-class WavFileUtils
+//当前wav文件模式
+typedef enum _WavUtilsMode
+{
+	WAV_UTILS_WRITE_MODE = 0,
+	WAV_UTILS_READ_MODE,
+}
+WavUtilsMode;
+
+class WavUtils
 {
 public:
-    WavFileUtils();
+    WavUtils();
     /* Wav信息读取 */
-	WavFileRet load(std::string path);
+	WavUtilsRet load(std::string path);
     bool getInfo(WavInfo& info);
 
 	/* Wav生成 */
-	int32 create();
+	//创建wav文件, 并写入文件头
+	WavUtilsRet create(std::string path, const WavInfo& info);	
+	//写入wav文件
+	WavUtilsRet write(const char* buf, int32 size);	
+	//关闭wav文件, 参数isFixHeader标记是否对文件头进行修改(目前只修正文件中数据量)
+	void close(bool isFixHeader);	
 
 private:
     FILE* m_fp;
-    WAV_FORMAT m_wavInfo;
+    WAV_FORMAT m_wavFormat;
     uint32 m_dataStartPos;
     uint32 m_dataLen;
 
