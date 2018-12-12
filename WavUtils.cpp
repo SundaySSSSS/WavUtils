@@ -144,13 +144,82 @@ WavUtilsRet WavUtils::create(std::string path, const WavInfo& info)
 	fwrite(&wavFormat, sizeof(wavFormat), 1, m_fp);
 	fwrite(&riffHeader, sizeof(riffHeader), 1, m_fp);
 
+	m_wavFormat = wavFormat;
+	m_mode = WAV_UTILS_WRITE_MODE;
+
 	return WAV_UTILS_OK;
 }
 
-WavUtilsRet WavUtils::write(const char* buf, int32 size)
+WavUtilsRet WavUtils::write(const char* buf, int32 size, DataFormat dataFormat /* = FORMAT_FLOAT32 */)
 {
+	
 	//fwrite()
 	return WAV_UTILS_OK;
 }
 
+char* WavUtils::transDataFormat(const void* pBufIn, int32 sizeIn, DataFormat formatIn, DataFormat formatOut)
+{
+
+}
+
+DataFormat WavUtils::transBitPerData2DataFormat(uint16 bitPerData)
+{
+	DataFormat dataFormat = FORMAT_INT8;
+	switch (bitPerData)
+	{
+	case 8:
+		dataFormat = FORMAT_INT8;
+		break;
+	case 16:
+		dataFormat = FORMAT_INT16;
+		break;
+	case 32:
+		dataFormat = FORMAT_INT32;
+		break;
+	default:
+		dataFormat = FORMAT_UNKNOWN;
+		break;
+	}
+	return dataFormat;
+}
+
+uint16 WavUtils::transDataFormat2BitPerData(DataFormat dataFormat)
+{
+	uint16 bitPerData = 0;
+	switch (dataFormat)
+	{
+	case FORMAT_INT8:
+		bitPerData = 8;
+		break;
+	case FORMAT_INT16:
+		bitPerData = 16;
+		break;
+	case FORMAT_INT32:
+		bitPerData = 32;
+		break;
+	default:
+		bitPerData = 0;
+		break;
+	}
+	return bitPerData;
+}
+
+char* WavUtils::transDataFormat(const void* pBufIn, int32 sizeIn, 
+							DataFormat formatIn, DataFormat formatOut)
+{
+	if (pBufIn == NULL)
+		return NULL;
+	int bytePerDataIn = transDataFormat2BitPerData(formatIn) / 8;
+	int bytePerDataOut = transDataFormat2BitPerData(formatOut) / 8;
+	if (m_pDataTransTempBuf != NULL)
+		delete[] m_pDataTransTempBuf;
+
+	char* pWalker = (char*)pBufIn;
+	m_pDataTransTempBuf = new char[bytePerDataOut * sizeIn];
+	for (int i = 0; i < sizeIn; ++i)
+	{
+		;
+	}
+
+}
 

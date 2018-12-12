@@ -9,6 +9,18 @@ using namespace std;
 
 #define WAV_HEADER_LEN (16) //wav文件头结构的标准长度, 超过此长度说明有拓展信息
 
+#ifndef DATA_FORMAT_STRUCT_
+#define DATA_FORMAT_STRUCT_
+typedef enum _DataFormat
+{
+	FORMAT_INT8,
+	FORMAT_INT16,
+	FORMAT_INT32,
+	FORMAT_UNKNOWN,
+}
+DataFormat;
+#endif /* DATA_FORMAT_STRUCT_ */
+
 #pragma pack(push, 1)
 typedef struct _WAV_FORMAT
 {
@@ -85,7 +97,7 @@ public:
 	//创建wav文件, 并写入文件头
 	WavUtilsRet create(std::string path, const WavInfo& info);	
 	//写入wav文件
-	WavUtilsRet write(const char* buf, int32 size);	
+	WavUtilsRet write(const char* buf, int32 size, DataFormat dataFormat = FORMAT_INT32);
 	//关闭wav文件, 参数isFixHeader标记是否对文件头进行修改(目前只修正文件中数据量)
 	void close(bool isFixHeader);	
 
@@ -95,6 +107,31 @@ private:
     WAV_FORMAT m_wavFormat;
     uint32 m_dataStartPos;
     uint32 m_dataLen;
+
+	//数据类型和每个数据点长度之间的相互转化
+	DataFormat transBitPerData2DataFormat(uint16 bitPerData);
+	uint16 transDataFormat2BitPerData(DataFormat dataFormat);
+
+	//************************************
+	// Method:    transDataFormat
+	// Returns:   char*	- 转换后数据存放的buffer
+	// Function:  将输入buf中的数据类型转换进行转换
+	// Parameter: const void * bufIn - 输入buffer
+	// Parameter: int32 sizeIn - 输入buffer的长度, 单位为bufIn类型的个数, 例如多少个float, 不表示字节
+	// Parameter: DataFormat formatIn - 输入buffer的数据类型
+	// Parameter: DataFormat formatOut - 要变成那种数据类型的输出
+	//************************************
+	char* transDataFormat(const void* pBufIn, int32 sizeIn, DataFormat formatIn, DataFormat formatOut);
+
+	//************************************
+	// Method:    freeTranDataFormatReturnBuf
+	// Returns:   void
+	// Function: 释放transDataFormat函数返回的内存空间
+	// Parameter: char * pBuf
+	//************************************
+	void freeTranDataFormatReturnBuf(char* pBuf);
+	//数据转换时临时使用的buffer
+	char* m_pDataTransTempBuf;
 };
 
 #endif // WAVFILEUTILS_H
