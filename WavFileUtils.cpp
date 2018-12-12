@@ -8,9 +8,9 @@ WavFileUtils::WavFileUtils()
     m_isLoadOK = false;
 }
 
-int32 WavFileUtils::load(string path)
+WavFileRet WavFileUtils::load(string path)
 {
-    int32 ret = WAV_LOAD_OK;
+	WavFileRet ret = WAV_LOAD_OK;
     if (m_fp != NULL)
     {
         fclose(m_fp);
@@ -22,36 +22,36 @@ int32 WavFileUtils::load(string path)
         ret = WAV_OPEN_ERR;
     }
 
-    size_t read_ret = fread(&m_wavFormat, sizeof(m_wavFormat), 1, m_fp);
+    size_t read_ret = fread(&m_wavInfo, sizeof(m_wavInfo), 1, m_fp);
     if (read_ret != 1)
     {   //读取错误
         ret = WAV_READ_ERR;
     }
-    else if (string(m_wavFormat.ChunkID, 4) != "RIFF")
+    else if (string(m_wavInfo.ChunkID, 4) != "RIFF")
     {   //开头不是约定的"RIFF"字符串
         ret = WAV_RIFF_ERR;
     }
-    else if (string(m_wavFormat.Format, 4) != "WAVE")
+    else if (string(m_wavInfo.Format, 4) != "WAVE")
     {   //格式不是固定字符串"WAVE"
         ret = WAV_WAVE_ERR;
     }
-    else if (string(m_wavFormat.Subchunk1ID, 4) != "fmt ")
+    else if (string(m_wavInfo.Subchunk1ID, 4) != "fmt ")
     {   //不是固定的字符串"fmt "
         ret = WAV_FMT_ERR;
     }
-    else if (m_wavFormat.AudioFormat != 1)
+    else if (m_wavInfo.AudioFormat != 1)
     {   //不是Windows PCM格式
         ret = WAV_NOT_PCM_ERR;
     }
     else
     {
-        cout << "Sample Rate: " << m_wavFormat.SampleRate;
-        cout << "Channel Num: " << m_wavFormat.NumChannnels;
-        cout << "Bits Per Sample: " << m_wavFormat.BitsPerSample;
+        cout << "Sample Rate: " << m_wavInfo.SampleRate;
+        cout << "Channel Num: " << m_wavInfo.NumChannnels;
+        cout << "Bits Per Sample: " << m_wavInfo.BitsPerSample;
 
         //开始寻找数据段
-        if (m_wavFormat.Subchunk1Size - WAV_HEADER_LEN != 0)
-            fseek(m_fp, m_wavFormat.Subchunk1Size - WAV_HEADER_LEN, SEEK_CUR);
+        if (m_wavInfo.Subchunk1Size - WAV_HEADER_LEN != 0)
+            fseek(m_fp, m_wavInfo.Subchunk1Size - WAV_HEADER_LEN, SEEK_CUR);
 
         int32 curPos = 0;
         while(curPos != EOF)
@@ -95,9 +95,9 @@ bool WavFileUtils::getInfo(WavInfo &info)
 {
     if (m_isLoadOK)
     {
-        info.numChannels = m_wavFormat.NumChannnels;
-        info.bitsPerSample = m_wavFormat.BitsPerSample;
-        info.sampleRate = m_wavFormat.SampleRate;
+        info.numChannels = m_wavInfo.NumChannnels;
+        info.bitsPerSample = m_wavInfo.BitsPerSample;
+        info.sampleRate = m_wavInfo.SampleRate;
         info.dataStartPos = m_dataStartPos;
         info.dataLen = m_dataLen;
         return true;

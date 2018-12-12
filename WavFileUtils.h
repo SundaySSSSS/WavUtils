@@ -45,7 +45,7 @@ typedef struct _WavInfo
 }
 WavInfo;
 
-typedef enum _WavFileLoadRet
+typedef enum _WavFileRet
 {
     WAV_LOAD_OK = 0,
     WAV_OPEN_ERR,
@@ -56,18 +56,22 @@ typedef enum _WavFileLoadRet
     WAV_NOT_PCM_ERR,
     WAV_NO_DATA_ERR,
 }
-WavFileLoadRet;
+WavFileRet;
 
 class WavFileUtils
 {
 public:
     WavFileUtils();
-    int32 load(std::string path);
+    /* Wav信息读取 */
+	WavFileRet load(std::string path);
     bool getInfo(WavInfo& info);
+
+	/* Wav生成 */
+	int32 create();
 
 private:
     FILE* m_fp;
-    WAV_FORMAT m_wavFormat;
+    WAV_FORMAT m_wavInfo;
     uint32 m_dataStartPos;
     uint32 m_dataLen;
 
