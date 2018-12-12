@@ -5,11 +5,14 @@ using namespace std;
 WavUtils::WavUtils()
 {
     m_fp = NULL;
-    m_isLoadOK = false;
+	m_mode = WAV_UTILS_UNDEF_MODE;
 }
 
 WavUtilsRet WavUtils::load(string path)
 {
+	if (m_mode != WAV_UTILS_UNDEF_MODE)
+		return WAV_NOT_IN_RIGHT_MODE;
+
 	WavUtilsRet ret = WAV_UTILS_OK;
     if (m_fp != NULL)
     {
@@ -45,9 +48,9 @@ WavUtilsRet WavUtils::load(string path)
     }
     else
     {
-        cout << "Sample Rate: " << m_wavFormat.SampleRate;
-        cout << "Channel Num: " << m_wavFormat.NumChannnels;
-        cout << "Bits Per Sample: " << m_wavFormat.BitsPerSample;
+        cout << "Sample Rate: " << m_wavFormat.SampleRate << endl;
+        cout << "Channel Num: " << m_wavFormat.NumChannnels << endl;
+        cout << "Bits Per Sample: " << m_wavFormat.BitsPerSample << endl;
 
         //开始寻找数据段
         if (m_wavFormat.Subchunk1Size - WAV_HEADER_LEN != 0)
@@ -67,13 +70,13 @@ WavUtilsRet WavUtils::load(string path)
             if (string(riffHeader.title, 4) != "data")
             {   //不是数据段, 继续寻找
                 cout << "title: " << string(riffHeader.title, 4).c_str() <<
-                            " len: " << riffHeader.len;
+                            " len: " << riffHeader.len << endl;
                 if (riffHeader.len != 0)
                     fseek(m_fp, riffHeader.len, SEEK_CUR);
             }
             else
             {
-                cout << "found data seg, len = " << riffHeader.len;
+                cout << "found data seg, len = " << riffHeader.len << endl;
                 m_dataStartPos = ftell(m_fp);
                 m_dataLen = riffHeader.len;
                 break;
@@ -87,13 +90,13 @@ WavUtilsRet WavUtils::load(string path)
     }
     fclose(m_fp);
     if (ret == WAV_UTILS_OK)
-        m_isLoadOK = true;
+		m_mode = WAV_UTILS_READ_MODE;
     return ret;
 }
 
 bool WavUtils::getInfo(WavInfo &info)
 {
-    if (m_isLoadOK)
+	if (WAV_UTILS_READ_MODE == m_mode)
     {
         info.numChannels = m_wavFormat.NumChannnels;
         info.bitsPerSample = m_wavFormat.BitsPerSample;
@@ -108,13 +111,32 @@ bool WavUtils::getInfo(WavInfo &info)
 
 WavUtilsRet WavUtils::create(std::string path, const WavInfo& info)
 {
+	if (m_mode != WAV_UTILS_UNDEF_MODE)
+		return WAV_NOT_IN_RIGHT_MODE;
+
 	//将输入的wavInfo转换为写入文件的WavFormat
 	WAV_FORMAT wavFormat;
-	wavFormat.NumChannnels = info.numChannels;
-	wavFormat.BitsPerSample = info.bitsPerSample;
-	wavFormat.SampleRate = info.sampleRate;
+	
 	memcpy(wavFormat.ChunkID, "RIFF", sizeof(wavFormat.ChunkID));
-	;
+	memcpy(wavFormat.Format, "WAVE", sizeof(wavFormat.Format));
+	memcpy(wavFormat.Subchunk1ID, "fmt ", sizeof(wavFormat.Subchunk1ID));
+	wavFormat.Subchunk1Size = 16;
+	wavFormat.AudioFormat = 1;
+	if (info.numChannels == 1 || info.numChannels == 2)
+		wavFormat.NumChannnels = info.numChannels;
+	else
+		return WAV_UTILS_INPUT_ERROR;
+	wavFormat.SampleRate = info.sampleRate;
+	wavFormat.ByteRate = info.numChannels * info.sampleRate * info.bitsPerSample / 8;
+	wavFormat.BlockAlign = info.numChannels * info.bitsPerSample / 8;
+	wavFormat.BitsPerSample = info.bitsPerSample;
+
+	m_fp = fopen(path.c_str(), "wb+");
+	if (m_fp == NULL)
+		return WAV_OPEN_ERR;
+	//写入文件头
+	fwrite(&wavFormat, sizeof(wavFormat), 1, m_fp);
+
 	return WAV_UTILS_OK;
 }
 

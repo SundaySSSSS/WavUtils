@@ -57,14 +57,17 @@ typedef enum _WavUtilsRet
     WAV_FMT_ERR,
     WAV_NOT_PCM_ERR,
     WAV_NO_DATA_ERR,
+	WAV_UTILS_INPUT_ERROR,	//输入参数有误
+	WAV_NOT_IN_RIGHT_MODE,	///当前所处模式有误
 }
 WavUtilsRet;
 
 //当前wav文件模式
 typedef enum _WavUtilsMode
 {
-	WAV_UTILS_WRITE_MODE = 0,
-	WAV_UTILS_READ_MODE,
+	WAV_UTILS_UNDEF_MODE,	//尚未确定的状态, 在此状态下可以读wav或写wav
+	WAV_UTILS_WRITE_MODE,	//wav写模式
+	WAV_UTILS_READ_MODE,	//wav读模式
 }
 WavUtilsMode;
 
@@ -85,12 +88,11 @@ public:
 	void close(bool isFixHeader);	
 
 private:
+	WavUtilsMode m_mode;
     FILE* m_fp;
     WAV_FORMAT m_wavFormat;
     uint32 m_dataStartPos;
     uint32 m_dataLen;
-
-    bool m_isLoadOK;
 };
 
 #endif // WAVFILEUTILS_H
