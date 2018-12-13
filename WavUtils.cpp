@@ -11,6 +11,13 @@ WavUtils::WavUtils()
 	m_dataLen = 0;
 }
 
+WavUtils::~WavUtils()
+{
+	if (m_fp != NULL)
+		fclose(m_fp);
+	m_fp = NULL;
+}
+
 WavUtilsRet WavUtils::load(string path)
 {
 	if (m_mode != WAV_UTILS_UNDEF_MODE)
@@ -93,6 +100,7 @@ WavUtilsRet WavUtils::load(string path)
         }
     }
     fclose(m_fp);
+	m_fp = NULL;
     if (ret == WAV_UTILS_OK)
 		m_mode = WAV_UTILS_READ_MODE;
     return ret;
@@ -169,7 +177,7 @@ WavUtilsRet WavUtils::write(const char* buf, int32 size)
 	{
 		ret = WAV_UTILS_WRITE_ERR;
 	}
-	return WAV_UTILS_OK;
+	return ret;
 }
 
 WavUtilsRet WavUtils::close()
@@ -183,6 +191,7 @@ WavUtilsRet WavUtils::close()
 	riffHeader.len = m_dataLen;
 	fwrite(&riffHeader, sizeof(riffHeader), 1, m_fp);
 	fclose(m_fp);
+	m_fp = NULL;
 	return WAV_UTILS_OK;
 }
 

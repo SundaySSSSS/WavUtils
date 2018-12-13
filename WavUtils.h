@@ -1,5 +1,5 @@
-#ifndef WAVFILEUTILS_H
-#define WAVFILEUTILS_H
+#ifndef WAVUTILS_H
+#define WAVUTILS_H
 
 #include "typedef.h"
 #include <iostream>
@@ -80,6 +80,7 @@ class WavUtils
 {
 public:
     WavUtils();
+	virtual ~WavUtils();
     /* Wav信息读取 */
 	WavUtilsRet load(std::string path);
     bool getInfo(WavInfo& info);
@@ -92,6 +93,8 @@ public:
 	//关闭wav文件, 在关闭时, 会根据统计的数据量写入文件头
 	WavUtilsRet close();
 
+	
+
 private:
 	WavUtilsMode m_mode;
     FILE* m_fp;
@@ -100,4 +103,4 @@ private:
     int32 m_dataLen;
 };
 
-#endif // WAVFILEUTILS_H
+#endif // WAVUTILS_H
