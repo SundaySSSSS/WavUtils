@@ -6,12 +6,15 @@ WavUtils::WavUtils()
 {
     m_fp = NULL;
 	m_mode = WAV_UTILS_UNDEF_MODE;
+	memset(&m_wavFormat, 0, sizeof(m_wavFormat));
+	m_dataStartPos = 0;
+	m_dataLen = 0;
 }
 
 WavUtilsRet WavUtils::load(string path)
 {
 	if (m_mode != WAV_UTILS_UNDEF_MODE)
-		return WAV_NOT_IN_RIGHT_MODE;
+		return WAV_UTILS_NOT_IN_RIGHT_MODE;
 
 	WavUtilsRet ret = WAV_UTILS_OK;
     if (m_fp != NULL)
@@ -22,29 +25,29 @@ WavUtilsRet WavUtils::load(string path)
     m_fp = fopen(path.c_str(), "rb");
     if (m_fp == NULL)
     {   //文件打开失败
-        ret = WAV_OPEN_ERR;
+        ret = WAV_UTILS_OPEN_ERR;
     }
 
     size_t read_ret = fread(&m_wavFormat, sizeof(m_wavFormat), 1, m_fp);
     if (read_ret != 1)
     {   //读取错误
-        ret = WAV_READ_ERR;
+        ret = WAV_UTILS_READ_ERR;
     }
     else if (string(m_wavFormat.ChunkID, 4) != "RIFF")
     {   //开头不是约定的"RIFF"字符串
-        ret = WAV_RIFF_ERR;
+        ret = WAV_UTILS_RIFF_ERR;
     }
     else if (string(m_wavFormat.Format, 4) != "WAVE")
     {   //格式不是固定字符串"WAVE"
-        ret = WAV_WAVE_ERR;
+        ret = WAV_UTILS_WAVE_ERR;
     }
     else if (string(m_wavFormat.Subchunk1ID, 4) != "fmt ")
     {   //不是固定的字符串"fmt "
-        ret = WAV_FMT_ERR;
+        ret = WAV_UTILS_FMT_ERR;
     }
     else if (m_wavFormat.AudioFormat != 1)
     {   //不是Windows PCM格式
-        ret = WAV_NOT_PCM_ERR;
+        ret = WAV_UTILS_NOT_PCM_ERR;
     }
     else
     {
@@ -64,7 +67,7 @@ WavUtilsRet WavUtils::load(string path)
             read_ret = fread(&riffHeader, sizeof(riffHeader), 1, m_fp);
             if (read_ret != 1)
             {   //读取数据段头信息失败
-                ret = WAV_READ_ERR;
+                ret = WAV_UTILS_READ_ERR;
                 break;
             }
             if (string(riffHeader.title, 4) != "data")
@@ -85,7 +88,7 @@ WavUtilsRet WavUtils::load(string path)
             curPos = ftell(m_fp);
             if (curPos == EOF)
             {   //文件结束, 尚未找到data段
-                ret = WAV_NO_DATA_ERR;
+                ret = WAV_UTILS_NO_DATA_ERR;
             }
         }
     }
@@ -113,7 +116,7 @@ bool WavUtils::getInfo(WavInfo &info)
 WavUtilsRet WavUtils::create(std::string path, const WavInfo& info)
 {
 	if (m_mode != WAV_UTILS_UNDEF_MODE)
-		return WAV_NOT_IN_RIGHT_MODE;
+		return WAV_UTILS_NOT_IN_RIGHT_MODE;
 
 	//将输入的wavInfo转换为写入文件的WavFormat
 	WAV_FORMAT wavFormat;
@@ -134,7 +137,7 @@ WavUtilsRet WavUtils::create(std::string path, const WavInfo& info)
 
 	m_fp = fopen(path.c_str(), "wb+");
 	if (m_fp == NULL)
-		return WAV_OPEN_ERR;
+		return WAV_UTILS_OPEN_ERR;
 	
 	//准备数据RIFF头
 	RIFF_HEADER riffHeader;
@@ -146,80 +149,41 @@ WavUtilsRet WavUtils::create(std::string path, const WavInfo& info)
 
 	m_wavFormat = wavFormat;
 	m_mode = WAV_UTILS_WRITE_MODE;
+	m_dataStartPos = sizeof(m_wavFormat) + sizeof(riffHeader);
 
 	return WAV_UTILS_OK;
 }
 
-WavUtilsRet WavUtils::write(const char* buf, int32 size, DataFormat dataFormat /* = FORMAT_FLOAT32 */)
+WavUtilsRet WavUtils::write(const char* buf, int32 size)
 {
+	if (m_mode != WAV_UTILS_WRITE_MODE)
+		return WAV_UTILS_NOT_IN_RIGHT_MODE;
+
+	int32 bytePerSample = m_wavFormat.BitsPerSample / 8;
+	size = size / bytePerSample * bytePerSample;	//只保留能够被采样点位数整除的数据
+	m_dataLen += size;
+	WavUtilsRet ret = WAV_UTILS_OK;
 	
-	//fwrite()
+	int32 writeRet = fwrite(buf, size, 1, m_fp);
+	if (writeRet < 1)
+	{
+		ret = WAV_UTILS_WRITE_ERR;
+	}
 	return WAV_UTILS_OK;
 }
 
-char* WavUtils::transDataFormat(const void* pBufIn, int32 sizeIn, DataFormat formatIn, DataFormat formatOut)
+WavUtilsRet WavUtils::close()
 {
-
+	if (m_mode != WAV_UTILS_WRITE_MODE)
+		return WAV_UTILS_NOT_IN_RIGHT_MODE;
+	_fseeki64(m_fp, sizeof(m_wavFormat), SEEK_SET);
+	//重新写入数据RIFF头
+	RIFF_HEADER riffHeader;
+	memcpy(&riffHeader.title, "data", sizeof(riffHeader.title));
+	riffHeader.len = m_dataLen;
+	fwrite(&riffHeader, sizeof(riffHeader), 1, m_fp);
+	fclose(m_fp);
+	return WAV_UTILS_OK;
 }
 
-DataFormat WavUtils::transBitPerData2DataFormat(uint16 bitPerData)
-{
-	DataFormat dataFormat = FORMAT_INT8;
-	switch (bitPerData)
-	{
-	case 8:
-		dataFormat = FORMAT_INT8;
-		break;
-	case 16:
-		dataFormat = FORMAT_INT16;
-		break;
-	case 32:
-		dataFormat = FORMAT_INT32;
-		break;
-	default:
-		dataFormat = FORMAT_UNKNOWN;
-		break;
-	}
-	return dataFormat;
-}
-
-uint16 WavUtils::transDataFormat2BitPerData(DataFormat dataFormat)
-{
-	uint16 bitPerData = 0;
-	switch (dataFormat)
-	{
-	case FORMAT_INT8:
-		bitPerData = 8;
-		break;
-	case FORMAT_INT16:
-		bitPerData = 16;
-		break;
-	case FORMAT_INT32:
-		bitPerData = 32;
-		break;
-	default:
-		bitPerData = 0;
-		break;
-	}
-	return bitPerData;
-}
-
-char* WavUtils::transDataFormat(const void* pBufIn, int32 sizeIn, 
-							DataFormat formatIn, DataFormat formatOut)
-{
-	if (pBufIn == NULL)
-		return NULL;
-	int bytePerDataIn = transDataFormat2BitPerData(formatIn) / 8;
-	int bytePerDataOut = transDataFormat2BitPerData(formatOut) / 8;
-	if (m_pDataTransTempBuf != NULL)
-		delete[] m_pDataTransTempBuf;
-
-	char* pWalker = (char*)pBufIn;
-	m_pDataTransTempBuf = new char[bytePerDataOut * sizeIn];
-	for (int i = 0; i < sizeIn; ++i)
-	{
-		;
-	}
-
-}
 
