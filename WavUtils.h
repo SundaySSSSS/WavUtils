@@ -46,6 +46,7 @@ typedef struct _WavInfo
     uint16 numChannels;
     uint32 sampleRate;
     uint16 bitsPerSample;
+	bool isFloat;			//是否为浮点型数据
     uint32 dataStartPos;	//读取时有效, 写入时无效
     uint32 dataLen;			//读取时有效, 写入时无效
 }
@@ -63,7 +64,7 @@ typedef enum _WavUtilsRet
     WAV_UTILS_NOT_PCM_ERR,	//不是Windows PCM格式
     WAV_UTILS_NO_DATA_ERR,	//文件结束, 尚未找到data段
 	WAV_UTILS_INPUT_ERROR,	//输入参数有误
-	WAV_UTILS_NOT_IN_RIGHT_MODE,	///当前所处模式有误
+	WAV_UTILS_NOT_IN_RIGHT_MODE,	//当前所处模式有误
 }
 WavUtilsRet;
 

@@ -16,13 +16,17 @@ int main(int argc, char* argv[])
 	wavUtils.create("C:\\test\\WOTW_new.wav", info);
 
 	FILE* fp = fopen("C:\\test\\WOTW_origin.wav", "rb");
-	_fseeki64(fp, info.dataStartPos, SEEK_SET);
-	char temp[1024 * 512] = {};
-	while (1 == fread(temp, 1024 * 512, 1, fp))
+	if (fp != NULL)
 	{
-		wavUtils.write(temp, 1024 * 512);
+		_fseeki64(fp, info.dataStartPos, SEEK_SET);
+		char temp[1024 * 512] = {};
+		while (1 == fread(temp, 1024 * 512, 1, fp))
+		{
+			wavUtils.write(temp, 1024 * 512);
+		}
+		fclose(fp);
 	}
-	fclose(fp);
+
 	wavUtils.close();
 	
 	

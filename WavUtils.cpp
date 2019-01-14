@@ -32,7 +32,7 @@ WavUtilsRet WavUtils::load(string path)
     m_fp = fopen(path.c_str(), "rb");
     if (m_fp == NULL)
     {   //文件打开失败
-        ret = WAV_UTILS_OPEN_ERR;
+        return WAV_UTILS_OPEN_ERR;
     }
 
     size_t read_ret = fread(&m_wavFormat, sizeof(m_wavFormat), 1, m_fp);
@@ -52,7 +52,7 @@ WavUtilsRet WavUtils::load(string path)
     {   //不是固定的字符串"fmt "
         ret = WAV_UTILS_FMT_ERR;
     }
-    else if (m_wavFormat.AudioFormat != 1)
+	else if (m_wavFormat.AudioFormat != 1 && m_wavFormat.AudioFormat != 3)
     {   //不是Windows PCM格式
         ret = WAV_UTILS_NOT_PCM_ERR;
     }
@@ -115,6 +115,14 @@ bool WavUtils::getInfo(WavInfo &info)
         info.sampleRate = m_wavFormat.SampleRate;
         info.dataStartPos = m_dataStartPos;
         info.dataLen = m_dataLen;
+		if (m_wavFormat.AudioFormat == 3)
+		{
+			info.isFloat = true;
+		}
+		else
+		{
+			info.isFloat = false;
+		}
         return true;
     }
     else
