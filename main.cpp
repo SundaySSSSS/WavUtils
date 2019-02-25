@@ -1,14 +1,9 @@
 #include "WavUtils.h"
-#include "DataFormatTrans.h"
-
-#if 1
-
-using namespace dft;
 
 int main(int argc, char* argv[])
 {
 	WavUtils wu;
-	wu.load("C:\\test\\WOTW_origin.wav");
+    wu.load("C:\\test\\Weight of the World.wav");
 	WavInfo info;
 	wu.getInfo(info);
 	
@@ -28,15 +23,7 @@ int main(int argc, char* argv[])
 	}
 
 	wavUtils.close();
-	
-	
-	
-	DataFormatTrans<int, float> Dft;
-	int a[5] = {};
-	float b = 5.0f;
-	Dft.transDataFormat(&(a[0]), 5, b);
 
 	system("pause");
 	return 0;
 }
-#endif
