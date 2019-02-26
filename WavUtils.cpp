@@ -56,6 +56,12 @@ WavUtilsRet WavUtils::load(string path)
         int32 curPos = 0;
         while(curPos != EOF)
         {
+            if (curPos > 1024 * 1024)
+            {   //如果已经找了很大的范围, 还是没有找到数据段, 则退出
+                ret = WAV_UTILS_NO_DATA_ERR;
+                break;
+            }
+
             SubChunkHeader subChunkHeader;
             memset(&subChunkHeader, 0, sizeof(subChunkHeader));
             read_ret = fread(&subChunkHeader, sizeof(subChunkHeader), 1, m_fp);
@@ -81,6 +87,20 @@ WavUtilsRet WavUtils::load(string path)
                 if (read_ret != 1)
                 {   //读取fmt段失败
                     ret = WAV_UTILS_READ_ERR;
+                    break;
+                }
+                int32 lenDiff = subChunkHeader.len - sizeof(m_subChunkFmt);
+                if (lenDiff > 0)
+                {
+                    fseeko64(m_fp, lenDiff, SEEK_CUR);
+                }
+                else if (lenDiff == 0)
+                {   //正好读完, 不做任何操作
+                    ;
+                }
+                else
+                {
+                    ret = WAV_UTILS_FMT_ERR;
                     break;
                 }
             }
@@ -145,7 +165,14 @@ WavUtilsRet WavUtils::create(std::string path, const WavInfo& info)
 
     //准备fmt子块数据
     SubChunkFmt subChunkFmt;
-    subChunkFmt.AudioFormat = 1;
+    if (info.isFloat)
+    {
+        subChunkFmt.AudioFormat = 3;
+    }
+    else
+    {
+        subChunkFmt.AudioFormat = 1;
+    }
 	if (info.numChannels == 1 || info.numChannels == 2)
         subChunkFmt.NumChannnels = info.numChannels;
 	else

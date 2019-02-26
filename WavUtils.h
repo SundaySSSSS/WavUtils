@@ -67,7 +67,7 @@ typedef enum _WavUtilsRet
 	WAV_UTILS_WRITE_ERR,
     WAV_UTILS_RIFF_ERR,		//开头不是约定的"RIFF"字符串
     WAV_UTILS_WAVE_ERR,		//格式不是固定字符串"WAVE"
-    WAV_UTILS_CAN_NOT_FIND_FMT_ERR,		//找不到"fmt "块
+    WAV_UTILS_FMT_ERR,		//"fmt "块错误
     WAV_UTILS_NOT_PCM_ERR,	//不是Windows PCM格式
     WAV_UTILS_NO_DATA_ERR,	//文件结束, 尚未找到data段
 	WAV_UTILS_INPUT_ERROR,	//输入参数有误
