@@ -7,7 +7,8 @@
 
 using namespace std;
 
-#define WAV_HEADER_LEN (16) //wav文件头结构的标准长度, 超过此长度说明有拓展信息
+//支持的最大wav头长度, 如果超过此长度还未找到wav文件中的fmt和data段, 则停止
+#define MAX_WAV_HEADER_SIZE (1024 * 1024)
 
 //wav文件中的信息
 

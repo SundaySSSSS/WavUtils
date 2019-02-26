@@ -56,7 +56,7 @@ WavUtilsRet WavUtils::load(string path)
         int32 curPos = 0;
         while(curPos != EOF)
         {
-            if (curPos > 1024 * 1024)
+            if (curPos > MAX_WAV_HEADER_SIZE)
             {   //如果已经找了很大的范围, 还是没有找到数据段, 则退出
                 ret = WAV_UTILS_NO_DATA_ERR;
                 break;
