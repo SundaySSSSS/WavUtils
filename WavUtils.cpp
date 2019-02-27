@@ -231,6 +231,15 @@ WavUtilsRet WavUtils::close()
     memcpy(&dataHeader.title, "data", sizeof(dataHeader.title));
     dataHeader.len = m_dataLen;
     fwrite(&dataHeader, sizeof(dataHeader), 1, m_fp);
+
+    //重新写入WavChunk块
+    fseeko64(m_fp, 0, SEEK_SET);
+    WavChunk wavChunk;
+    memcpy(wavChunk.ChunkID, "RIFF", sizeof(wavChunk.ChunkID));
+    wavChunk.ChunkSize = m_dataStartPos + m_dataLen - 8;
+    memcpy(wavChunk.Format, "WAVE", sizeof(wavChunk.Format));
+    fwrite(&wavChunk, sizeof(wavChunk), 1, m_fp);
+
 	fclose(m_fp);
 	m_fp = NULL;
 	return WAV_UTILS_OK;
